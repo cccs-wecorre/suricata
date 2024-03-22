@@ -49,7 +49,7 @@ const DETECT_BYTEMATH_FLAG_REQUIRED: u8 = DETECT_BYTEMATH_FLAG_RESULT
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-// operators: +, -, /, *, <<, >>
+// operators: +, -, /, *, <<, >>, ^
 pub enum ByteMathOperator {
     OperatorNone = 1,
     Addition = 2,
@@ -58,6 +58,7 @@ pub enum ByteMathOperator {
     Multiplication = 5,
     LeftShift = 6,
     RightShift = 7,
+    Xor = 8,
 }
 
 #[repr(u8)]
@@ -177,6 +178,7 @@ fn get_oper_value(value: &str) -> Result<ByteMathOperator, ()> {
         "*" => ByteMathOperator::Multiplication,
         "<<" => ByteMathOperator::LeftShift,
         ">>" => ByteMathOperator::RightShift,
+        "^" => ByteMathOperator::Xor,
         _ => return Err(()),
     };
 
@@ -878,15 +880,16 @@ mod tests {
         let (_, val) = parse_bytemath("bytes 4, offset 3933, oper <<, rvalue myrvalue, result foo").unwrap();
         assert_eq!(val, bmd);
 
+        bmd.oper = ByteMathOperator::Xor;
+        let (_, val) = parse_bytemath("bytes 4, offset 3933, oper ^, rvalue myrvalue, result foo").unwrap();
+        assert_eq!(val, bmd);
+
     }
 
     #[test]
     fn test_parser_oper_invalid() {
         assert!(
             parse_bytemath("bytes 4, offset 0, oper !, rvalue myvalue, result foo").is_err()
-        );
-        assert!(
-            parse_bytemath("bytes 4, offset 0, oper ^, rvalue myvalue, result foo").is_err()
         );
         assert!(
             parse_bytemath("bytes 4, offset 0, oper <>, rvalue myvalue, result foo").is_err()

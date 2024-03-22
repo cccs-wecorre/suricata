@@ -188,6 +188,9 @@ int DetectByteMathDoMatch(DetectEngineThreadCtx *det_ctx, const DetectByteMathDa
         case RightShift:
             val >>= rvalue;
             break;
+        case Xor:
+            val ^= rvalue;
+            break;
     }
 
     det_ctx->buffer_offset = ptr - payload;
