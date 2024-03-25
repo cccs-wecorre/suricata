@@ -180,6 +180,8 @@ static const char *GeolocateIPv4(const DetectGeoipData *geoipdata, uint32_t ip)
 #define GEOIP_MATCH_DST_STR     "dst"
 #define GEOIP_MATCH_BOTH_STR    "both"
 #define GEOIP_MATCH_ANY_STR     "any"
+#define GEOIP_MATCH_SAME_STR    "same"
+#define GEIP_MATCH_DIFF_STR     "diff"
 
 #define GEOIP_MATCH_NO_FLAG     0
 #define GEOIP_MATCH_SRC_FLAG    1
@@ -187,6 +189,8 @@ static const char *GeolocateIPv4(const DetectGeoipData *geoipdata, uint32_t ip)
 #define GEOIP_MATCH_ANY_FLAG    3 /* default src and dst*/
 #define GEOIP_MATCH_BOTH_FLAG   4
 #define GEOIP_MATCH_NEGATED     8
+#define GEOIP_MATCH_EQ_FLAG     16
+#define GEEIP_MATCH_SAME_FLAG   32
 
 /**
  * \internal
@@ -255,6 +259,26 @@ static int DetectGeoipMatch(DetectEngineThreadCtx *det_ctx,
 
     if (PKT_IS_IPV4(p))
     {
+        if (geoipdata->flags & GEOIP_MATCH_EQ_FLAG ) {
+            const char *src_country = GeolocateIPv4(geoipdata, GET_IPV4_SRC_ADDR_U32(p));
+            if (src_country == NULL)
+                return 0;
+            const char *dst_country = GeolocateIPv4(geoipdata, GET_IPV4_DST_ADDR_U32(p));
+            if (dst_country == NULL) {
+                SCFree((void *)src_country);
+                return 0;
+            }
+
+            const int country_cmp = strcmp(src_country, dst_country);
+            SCFree((void *)src_country);
+            SCFree((void *)dst_country);
+
+            if (geoipdata->flags & GEOIP_MATCH_SAME_FLAG) {
+                return country_cmp == 0;
+            } else {
+                return country_cmp != 0;
+            }
+        }
         if (geoipdata->flags & ( GEOIP_MATCH_SRC_FLAG | GEOIP_MATCH_BOTH_FLAG ))
         {
             if (CheckGeoMatchIPv4(geoipdata, GET_IPV4_SRC_ADDR_U32(p)))
@@ -320,9 +344,18 @@ static DetectGeoipData *DetectGeoipDataParse (DetectEngineCtx *de_ctx, const cha
                 /* Parse match-on condition */
                 if (pos == slen) /* if end of option str then there are no match-on cond. */
                 {
-                    /* There was NO match-on condition! we default to ANY*/
-                    skiplocationparsing = 0;
-                    geoipdata->flags |= GEOIP_MATCH_ANY_FLAG;
+                    if (strncmp(&str[prevpos], GEOIP_MATCH_SAME_STR, pos-prevpos) == 0) {
+                        skiplocationparsing = 1;
+                        geoipdata->flags |= GEOIP_MATCH_EQ_FLAG;
+                        geoipdata->flags |= GEOIP_MATCH_SAME_FLAG;
+                    } else if (strncmp(&str[prevpos], GEOIP_MATCH_DIFF_STR, pos-prevpos) == 0) {
+                        skiplocationparsing = 1;
+                        geoipdata->flags |= GEOIP_MATCH_EQ_FLAG;
+                    } else {
+                        /* There was NO match-on condition! we default to ANY*/
+                        skiplocationparsing = 0;
+                        geoipdata->flags |= GEOIP_MATCH_ANY_FLAG;
+                    }
                 } else {
                     skiplocationparsing = 1;
                     if (strncmp(&str[prevpos], GEOIP_MATCH_SRC_STR, pos-prevpos) == 0)
