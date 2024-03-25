@@ -177,6 +177,8 @@ The syntax of geoip::
   geoip: dst,CN,RU,IR;
   geoip: both,US,CA,UK;
   geoip: any,CN,IR;
+  geoip: same;
+  geoip: diff;
 
 ====== =============================================================
 Option Description
@@ -185,6 +187,8 @@ both   Both source and destination have to match with the given geoip(s)
 any    Either the source or the destination has to match with the given geoip(s).
 dest   The destination matches with the given geoip.
 src    The source matches with the given geoip.
+same   The source and destination are the same (cannot be used with diff).
+diff   The source and destination are different (cannot be used with same).
 ====== =============================================================
 
 geoip currently only supports IPv4. As it uses the GeoIP2 API of MaxMind,
