@@ -181,7 +181,7 @@ static const char *GeolocateIPv4(const DetectGeoipData *geoipdata, uint32_t ip)
 #define GEOIP_MATCH_BOTH_STR    "both"
 #define GEOIP_MATCH_ANY_STR     "any"
 #define GEOIP_MATCH_SAME_STR    "same"
-#define GEIP_MATCH_DIFF_STR     "diff"
+#define GEOIP_MATCH_DIFF_STR     "diff"
 
 #define GEOIP_MATCH_NO_FLAG     0
 #define GEOIP_MATCH_SRC_FLAG    1
@@ -190,7 +190,7 @@ static const char *GeolocateIPv4(const DetectGeoipData *geoipdata, uint32_t ip)
 #define GEOIP_MATCH_BOTH_FLAG   4
 #define GEOIP_MATCH_NEGATED     8
 #define GEOIP_MATCH_EQ_FLAG     16
-#define GEEIP_MATCH_SAME_FLAG   32
+#define GEOIP_MATCH_SAME_FLAG   32
 
 /**
  * \internal
@@ -560,6 +560,18 @@ static int GeoipParseTest07(void)
                                 GEOIP_MATCH_BOTH_FLAG | GEOIP_MATCH_NEGATED);
 }
 
+static int GeoipParseTest08(void)
+{
+    return GeoipParseTest("alert tcp any any -> any any (geoip:same;sid:1;)", 0, NULL,
+                                GEOIP_MATCH_EQ_FLAG | GEOIP_MATCH_SAME_FLAG);
+}
+
+static int GeoipParseTest09(void)
+{
+    return GeoipParseTest("alert tcp any any -> any any (geoip:diff;sid:1;)", 0, NULL,
+                                GEOIP_MATCH_EQ_FLAG);
+}
+
 /**
  * \internal
  * \brief This function registers unit tests for DetectGeoip
@@ -573,6 +585,8 @@ static void DetectGeoipRegisterTests(void)
     UtRegisterTest("GeoipParseTest05", GeoipParseTest05);
     UtRegisterTest("GeoipParseTest06", GeoipParseTest06);
     UtRegisterTest("GeoipParseTest07", GeoipParseTest07);
+    UtRegisterTest("GeoipParseTest08", GeoipParseTest08);
+    UtRegisterTest("GeoipParseTest09", GeoipParseTest09);
 }
 #endif /* UNITTESTS */
 #endif /* HAVE_GEOIP */
